@@ -7,20 +7,20 @@
 
 namespace dssim {
 
-template<typename MessageType, int duration>
-class Accepts : private virtual AcceptingNode<MessageType>,
+template<typename EventType, int duration>
+class Accepts : private virtual AcceptingNode<EventType>,
                 protected virtual ConnectedNode,
                 public virtual Node {
  private:
-  virtual Transaction getTransaction(MessageType message) override;
+  virtual Transaction getTransaction(EventType message) override;
  protected:
-  virtual void onMessage(MessageType message) = 0;
+  virtual void onEvent(EventType message) = 0;
 };
 
-template<typename MessageType, int duration>
-Transaction Accepts<MessageType,
-                    duration>::getTransaction(MessageType message) {
-  return Transaction(([=]() { onMessage(message); }), duration);
+template<typename EventType, int duration>
+Transaction Accepts<EventType,
+                    duration>::getTransaction(EventType message) {
+  return Transaction(([=]() { onEvent(message); }), duration);
 }
 
 }

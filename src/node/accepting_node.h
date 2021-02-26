@@ -7,10 +7,10 @@
 
 namespace dssim {
 
-template<typename MessageType>
+template<typename EventType>
 class AcceptingNode : public virtual Node {
  public:
-  virtual Transaction getTransaction(MessageType message) = 0;
+  virtual Transaction getTransaction(EventType message) = 0;
 };
 
 }

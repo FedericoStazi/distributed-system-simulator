@@ -8,6 +8,7 @@
 namespace dssim {
 
 class Message;
+class Timer;
 
 class ConnectedNode : public virtual Node {
  public:
@@ -16,19 +17,21 @@ class ConnectedNode : public virtual Node {
     return id_;
   }
  protected:
-  template<typename T>
-  void sendMessage(T message, int receiver_id) const;
-  template<typename T>
-  void broadcastMessage(T message) const;
+  template<typename MessageType>
+  void sendMessage(MessageType message, int receiver_id) const;
+  template<typename MessageType>
+  void broadcastMessage(MessageType message) const;
+  template<typename TimerType>
+  void startTimer(TimerType timer) const;
  private:
   void initializeConnection(std::shared_ptr<Network> network, int id) override;
   std::shared_ptr<Network> network_;
   int id_ = -1;
 };
 
-template<typename T>
-void ConnectedNode::sendMessage(T message, int receiver_id) const {
-  static_assert(std::is_base_of<Message, T>::value,
+template<typename MessageType>
+void ConnectedNode::sendMessage(MessageType message, int receiver_id) const {
+  static_assert(std::is_base_of<Message, MessageType>::value,
                 "sendMessage expects a subclass of Message");
   if (network_) {
     message.header_ = {getID(), receiver_id, false};
@@ -38,13 +41,25 @@ void ConnectedNode::sendMessage(T message, int receiver_id) const {
   }
 }
 
-template<typename T>
-void ConnectedNode::broadcastMessage(T message) const {
-  static_assert(std::is_base_of<Message, T>::value,
+template<typename MessageType>
+void ConnectedNode::broadcastMessage(MessageType message) const {
+  static_assert(std::is_base_of<Message, MessageType>::value,
                 "broadcastMessage expects a subclass of Message");
   if (network_) {
     message.header_ = {getID(), 0, true};
     network_->broadcastMessage(message);
+  } else {
+    throw uninitializedConnectionError();
+  }
+}
+
+template<typename TimerType>
+void ConnectedNode::startTimer(TimerType timer) const {
+  static_assert(std::is_base_of<Timer, TimerType>::value,
+                "startTimer expects a subclass of Timer");
+  if (network_) {
+    timer.header_ = {getID()};
+    network_->startTimer(timer);
   } else {
     throw uninitializedConnectionError();
   }
