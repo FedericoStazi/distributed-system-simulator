@@ -1,0 +1,3 @@
+add_executable(jobs_scheduler jobs_scheduler.cpp)
+
+target_link_libraries(jobs_scheduler dssim)
