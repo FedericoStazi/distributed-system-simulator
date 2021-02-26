@@ -30,12 +30,12 @@ class ConnectedNode : public virtual Node {
 };
 
 template<typename MessageType>
-void ConnectedNode::sendMessage(MessageType message, int receiver_id) const {
+void ConnectedNode::sendMessage(MessageType message, int receiver) const {
   static_assert(std::is_base_of<Message, MessageType>::value,
                 "sendMessage expects a subclass of Message");
   if (network_) {
-    message.header_ = {getID(), receiver_id, false};
-    network_->sendMessage(message, receiver_id);
+    message.header_ = {getID(), receiver, false};
+    network_->sendMessage(message);
   } else {
     throw uninitializedConnectionError();
   }
@@ -47,7 +47,7 @@ void ConnectedNode::broadcastMessage(MessageType message) const {
                 "broadcastMessage expects a subclass of Message");
   if (network_) {
     message.header_ = {getID(), 0, true};
-    network_->broadcastMessage(message);
+    network_->sendMessage(message);
   } else {
     throw uninitializedConnectionError();
   }

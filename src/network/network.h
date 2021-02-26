@@ -13,70 +13,89 @@ namespace dssim {
 class Node;
 class Message;
 class Timer;
+class NetworkBehaviour;
 
 class Network {
  public:
-  void addNode(std::unique_ptr<dssim::Node> node);
+  int addNode(std::unique_ptr<Node> node);
+  void setNetworkBehaviour(std::unique_ptr<NetworkBehaviour> network_behaviour);
   void start();
   template<typename MessageType>
-  void sendMessage(MessageType message, int destination_id);
-  template<typename MessageType>
-  void broadcastMessage(MessageType message);
+  void sendMessage(const MessageType message);
   template<typename TimerType>
   void startTimer(TimerType timer);
  private:
-  std::map<int, std::unique_ptr<dssim::Node>> nodes_;
+  std::map<int, std::unique_ptr<Node>> nodes_;
   TimeQueue<Transaction> events_queue_;
   unsigned int next_id_ = 0;
-  double time_ = 0;
+  double current_time_ = 0;
+  std::unique_ptr<NetworkBehaviour> network_behaviour_;
 };
 
-void dssim::Network::addNode(std::unique_ptr<dssim::Node> node) {
-  nodes_[++next_id_] = std::move(node);
+int Network::addNode(std::unique_ptr<Node> node) {
+  next_id_++;
+  nodes_[next_id_] = std::move(node);
+  return next_id_;
 }
 
-void dssim::Network::start() {
+void Network::setNetworkBehaviour(std::unique_ptr<NetworkBehaviour> network_behaviour) {
+  network_behaviour_ = std::move(network_behaviour);
+}
+
+void Network::start() {
   for (const auto&[id, node] : nodes_) {
     node->start(std::shared_ptr<Network>(this), id);
   }
   while (!events_queue_.empty()) {
     const auto&[next_time, transaction] = events_queue_.pop();
-    time_ = std::max(time_, next_time);
-    transaction.runTrace(time_);
+    current_time_ = std::max(current_time_, next_time);
+    transaction.runTrace(current_time_);
     transaction.runTransaction();
   }
 }
 
 template<typename MessageType>
-void dssim::Network::sendMessage(MessageType message, int destination_id) {
+void Network::sendMessage(const MessageType message) {
   static_assert(std::is_base_of<Message, MessageType>::value,
                 "sendMessage expects a subclass of Message");
-  try {  // Non-silent fail would be a covert channel
-    if (nodes_.count(destination_id)) {
-      auto &node = dynamic_cast<AcceptingNode<MessageType> &>(*nodes_[destination_id]);
-      auto transaction = node.getTransaction(message);
-      double time = time_ + transaction.getDuration();
-      events_queue_.insert(time, transaction);
+  if (message.isBroadcast()) {
+    for (const auto&[id, _] : nodes_) {
+      auto message_copy = message;
+      message_copy.setBroadcastReceiver(id);
+      sendMessage(message_copy);
     }
-  } catch (std::bad_cast &e) {}
-}
-
-template<typename MessageType>
-void dssim::Network::broadcastMessage(MessageType message) {
-  static_assert(std::is_base_of<Message, MessageType>::value,
-                "broadcastMessage expects a subclass of Message");
-  for (const auto&[id, _] : nodes_) {
-    sendMessage(message, id);
+  } else {
+    try {  // Non-silent fail would be a covert channel
+      if (nodes_.count(message.getReceiver())) {
+        auto &node =
+            dynamic_cast<AcceptingNode<MessageType> &>(*nodes_[message.getReceiver()]);
+        std::vector<double> latencies = {0.0};
+        if (network_behaviour_) {
+          latencies = network_behaviour_->getLatencies(message);
+        }
+        for (double latency : latencies) {
+          auto message_copy = message;
+          if (network_behaviour_) {
+            network_behaviour_->getInterference(message_copy);
+          }
+          auto transaction = node.getTransaction(message_copy);
+          double time = current_time_ + transaction.getDuration() + latency;
+          events_queue_.insert(time, transaction);
+        }
+      }
+    } catch (std::bad_cast &e) {}
   }
 }
+
 template<typename TimerType>
 void Network::startTimer(TimerType timer) {
   static_assert(std::is_base_of<Timer, TimerType>::value,
                 "startTimer expects a subclass of Timer");
   try {  // Non-silent fail would be a covert channel
-    auto &node = dynamic_cast<AcceptingNode<TimerType> &>(*nodes_[timer.getOwner()]);
+    auto &node =
+        dynamic_cast<AcceptingNode<TimerType> &>(*nodes_[timer.getOwner()]);
     auto transaction = node.getTransaction(timer);
-    double time = time_ + transaction.getDuration();
+    double time = current_time_ + transaction.getDuration();
     events_queue_.insert(time, transaction);
   } catch (std::bad_cast &e) {}
 }

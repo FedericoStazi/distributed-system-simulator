@@ -4,7 +4,7 @@
 
 #include <unordered_set>
 #include <set>
-#include "../include/dssim.h"
+#include "../dssim.h"
 
 struct RequestsTimeout : public dssim::Timer {};
 
@@ -33,8 +33,8 @@ class Worker : public dssim::Accepts<JobRequest, 100> {
 };
 
 class Scheduler : public dssim::Accepts<WorkerReady, 1>,
-                  dssim::Accepts<JobRequest, 1>,
-                  dssim::Accepts<JobCompleted, 1> {
+                  public dssim::Accepts<JobRequest, 1>,
+                  public dssim::Accepts<JobCompleted, 1> {
  public:
   void onStart() override {
     broadcastMessage(SchedulerReady());
@@ -64,8 +64,8 @@ class Scheduler : public dssim::Accepts<WorkerReady, 1>,
 };
 
 class Client : public dssim::Accepts<SchedulerReady, 1>,
-               dssim::AcceptsTrace<JobCompleted, 1>,
-               dssim::AcceptsTrace<RequestsTimeout, 1000> {
+               public dssim::AcceptsTrace<JobCompleted, 1>,
+               public dssim::AcceptsTrace<RequestsTimeout, 1000> {
  public:
   void onStart() override {}
   void onEvent(SchedulerReady message) override {
@@ -77,7 +77,7 @@ class Client : public dssim::Accepts<SchedulerReady, 1>,
   }
   void onEvent(JobCompleted message) override {
     completed_jobs.insert(message.job_id);
-    std::cout << "Job " << message.job_id << " completed" <<std::endl;
+    std::cout << "Job " << message.job_id << " completed" << std::endl;
   }
   void onEvent(RequestsTimeout timer) override {
     for (int i = 0; i < jobs_count; i++) {
@@ -93,19 +93,53 @@ class Client : public dssim::Accepts<SchedulerReady, 1>,
   }
  private:
   int max_retries = 5;
-  int scheduler_id;
+  int scheduler_id = 0;
   const int jobs_count = 10;
   std::set<int> completed_jobs;
+};
+
+class CustomNetworkBehaviour : public dssim::behaviours::NoInterference,
+                               public dssim::behaviours::Graph<double> {
+ public:
+  explicit CustomNetworkBehaviour(double average_latency) :
+      average_latency_(average_latency) {}
+ private:
+  std::vector<double> getEdgeLatencies(double loss_probability) override {
+    if (std::bernoulli_distribution(loss_probability)(gen_)) {
+      return {};
+    }
+    return {std::exponential_distribution(average_latency_)(gen_)};
+  }
+  std::default_random_engine gen_;
+  double average_latency_;
 };
 
 int main() {
   dssim::Network network;
 
-  network.addNode(std::make_unique<Worker>());
-  network.addNode(std::make_unique<Worker>());
-  network.addNode(std::make_unique<Worker>());
-  network.addNode(std::make_unique<Scheduler>());
-  network.addNode(std::make_unique<Client>());
+  // Add nodes to the network
+  auto workers = {
+      network.addNode(std::make_unique<Worker>()),
+      network.addNode(std::make_unique<Worker>()),
+      network.addNode(std::make_unique<Worker>()),
+      network.addNode(std::make_unique<Worker>()),
+      network.addNode(std::make_unique<Worker>()),
+      network.addNode(std::make_unique<Worker>())
+  };
+  int scheduler = network.addNode(std::make_unique<Scheduler>());
+  auto clients = {
+      network.addNode(std::make_unique<Client>())
+  };
+
+  // Set network behaviour
+  auto network_behaviour = std::make_unique<CustomNetworkBehaviour>(0.1);
+  for (int worker : workers) {
+    network_behaviour->addBidirectionalEdge(worker, scheduler, 0.2);
+  }
+  for (int client : clients) {
+    network_behaviour->addBidirectionalEdge(client, scheduler, 0);
+  }
+  network.setNetworkBehaviour(std::move(network_behaviour));
 
   network.start();
 }

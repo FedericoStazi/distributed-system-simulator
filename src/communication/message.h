@@ -19,6 +19,12 @@ class Message {
   [[nodiscard]] inline bool isBroadcast() const {
     return header_.is_broadcast;
   }
+  void inline setBroadcastReceiver(int receiver) {
+    if (isBroadcast()) {
+      header_.is_broadcast = false;
+      header_.receiver_id = receiver;
+    }
+  }
  private:
   friend ConnectedNode;
   struct MessageHeader {
