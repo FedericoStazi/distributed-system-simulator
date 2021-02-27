@@ -1,5 +1,5 @@
-add_executable(jobs_scheduler jobs_scheduler.cpp example_behaviours.h)
-target_link_libraries(jobs_scheduler dssim)
+add_executable(example_jobs_scheduler jobs_scheduler.cpp example_behaviours.h)
+target_link_libraries(example_jobs_scheduler dssim)
 
 add_executable(example_reliable_broadcast reliable_broadcast.cpp example_behaviours.h)
 target_link_libraries(example_reliable_broadcast dssim utils_reliable_broadcast)

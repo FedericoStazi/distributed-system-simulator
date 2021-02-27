@@ -12,13 +12,13 @@
 
 struct TestMessage : dssim::MessageUID {};
 
-class Node : public dssim::utils::ReliableBroadcastNode<TestMessage>,
-             public dssim::AcceptsTrace<dssim::utils::ReliableBroadcastSuccess<
-                 TestMessage>, 1> {
+class Broadcaster : public dssim::utils::ReliableBroadcastNode<TestMessage>,
+                    public dssim::AcceptsTrace<dssim::utils::ReliableBroadcastSuccess<
+                        TestMessage>, 1> {
  public:
-  explicit Node(int nodes_count, bool is_sender) : is_sender_(is_sender),
-                                                   dssim::utils::ReliableBroadcastNode<
-                                                       TestMessage>(nodes_count) {}
+  explicit Broadcaster(int nodes_count, bool is_sender) :
+      is_sender_(is_sender),
+      dssim::utils::ReliableBroadcastNode<TestMessage>(nodes_count) {}
   void onStart() override {
     if (is_sender_) {
       reliableBroadcastMessage(TestMessage());
@@ -40,13 +40,9 @@ int main() {
   dssim::Network network;
 
   // Add nodes to the network
-  int nodes_count = 100;
-  std::vector<int> nodes;
-  nodes.push_back(network.addNode(std::make_unique<Node>(nodes_count, true)));
-  for (int i = 0; i < nodes_count - 1; i++) {
-    nodes.push_back(network.addNode(std::make_unique<Node>(nodes_count,
-                                                           false)));
-  }
+  int n = 100;
+  auto nodes = network.emplaceMultipleNodes<Broadcaster>(n - 1, n, false);
+  nodes.push_back(network.emplaceNode<Broadcaster>(n, true));
 
   // Set network behaviour
   auto network_behaviour =

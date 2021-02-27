@@ -34,7 +34,7 @@ class JobCompleted : public dssim::MessageID {
   int job_id = -1;
 };
 
-class Worker : public dssim::Accepts<JobRequest, 100> {
+class Worker : public dssim::Accepts<JobRequest, 10> {
  public:
   void onStart() override {
     broadcastMessage(WorkerReady());
@@ -100,11 +100,11 @@ class Client : public dssim::Accepts<SchedulerReady, 1>,
     }
     if (max_retries > 0 and completed_jobs.size() < jobs_count) {
       max_retries--;
-      startTimer(1000, RequestsTimeout());
+      startTimer(100, RequestsTimeout());
     }
   }
  private:
-  int max_retries = 5;
+  int max_retries = 10;
   int scheduler_id = 0;
   const int jobs_count = 10;
   std::set<int> completed_jobs;
@@ -114,18 +114,9 @@ int main() {
   dssim::Network network;
 
   // Add nodes to the network
-  auto workers = {
-      network.addNode(std::make_unique<Worker>()),
-      network.addNode(std::make_unique<Worker>()),
-      network.addNode(std::make_unique<Worker>()),
-      network.addNode(std::make_unique<Worker>()),
-      network.addNode(std::make_unique<Worker>()),
-      network.addNode(std::make_unique<Worker>())
-  };
-  int scheduler = network.addNode(std::make_unique<Scheduler>());
-  auto clients = {
-      network.addNode(std::make_unique<Client>())
-  };
+  auto workers = network.emplaceMultipleNodes<Worker>(5);
+  int scheduler = network.emplaceNode<Scheduler>();
+  int client = network.emplaceNode<Client>();
 
   // Set network behaviour
   auto network_behaviour =
@@ -133,9 +124,7 @@ int main() {
   for (int worker : workers) {
     network_behaviour->addBidirectionalEdge(worker, scheduler, {0.2, 0.1});
   }
-  for (int client : clients) {
-    network_behaviour->addBidirectionalEdge(client, scheduler, {0, 0.1});
-  }
+  network_behaviour->addBidirectionalEdge(client, scheduler, {0, 0.1});
   network.setNetworkBehaviour(std::move(network_behaviour));
 
   network.start();

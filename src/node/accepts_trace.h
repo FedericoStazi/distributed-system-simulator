@@ -33,7 +33,7 @@ void AcceptsTrace<T, duration>::getTrace(double time) const {
   std::cout
       << "****************************************************************\n"
       << "Time: " << std::to_string(time) << "\t\t" <<
-      "Node id: " << std::to_string(ConnectedNode::getID()) << "\t\t" <<
+      "Broadcaster id: " << std::to_string(ConnectedNode::getID()) << "\t\t" <<
       typeid(*this).name() << " on " << typeid(T).name() << std::endl;
 }
 

@@ -13,24 +13,31 @@ namespace dssim {
 
 class Node;
 class Message;
-class Timer;
 class NetworkBehaviour;
 
 class Network {
  public:
   int addNode(std::unique_ptr<Node> node);
+  template<typename T, typename ... Args>
+  int emplaceNode(const Args &... args);
+  template<typename T, typename ... Args>
+  std::vector<int> emplaceMultipleNodes(int n, const Args &... args);
   void setNetworkBehaviour(std::unique_ptr<NetworkBehaviour> network_behaviour);
+  void setNodesBehaviour(std::unique_ptr<NodesBehaviour> nodes_behaviour);
   void start();
+
   template<typename T>
   void sendMessage(const T message);
   template<typename T>
   void startTimer(double timer_duration, T message);
+
  private:
   std::map<int, std::unique_ptr<Node>> nodes_;
   TimeQueue<Transaction> events_queue_;
   unsigned int next_id_ = 0;
   double current_time_ = 0;
   std::unique_ptr<NetworkBehaviour> network_behaviour_;
+  std::unique_ptr<NodesBehaviour> nodes_behaviour_;
 };
 
 int Network::addNode(std::unique_ptr<Node> node) {
@@ -39,8 +46,26 @@ int Network::addNode(std::unique_ptr<Node> node) {
   return next_id_;
 }
 
+template<typename T, typename... Args>
+int Network::emplaceNode(const Args &... args) {
+  static_assert(std::is_base_of<Node, T>::value, "T must be a Node");
+  return addNode(std::make_unique<T>(args...));
+}
+
+template<typename T, typename... Args>
+std::vector<int> Network::emplaceMultipleNodes(int n, const Args &... args) {
+  std::vector<int> ids;
+  std::generate_n(std::back_inserter(ids), n,
+                  [&]() { return emplaceNode<T>(args...); });
+  return ids;
+}
+
 void Network::setNetworkBehaviour(std::unique_ptr<NetworkBehaviour> network_behaviour) {
   network_behaviour_ = std::move(network_behaviour);
+}
+
+void Network::setNodesBehaviour(std::unique_ptr<NodesBehaviour> nodes_behaviour) {
+  nodes_behaviour_ = std::move(nodes_behaviour);
 }
 
 void Network::start() {
@@ -80,7 +105,8 @@ void Network::sendMessage(const T message) {
             network_behaviour_->getInterference(message_copy);
           }
           auto transaction = node.getTransaction(message_copy);
-          double time = current_time_ + (double) transaction.getDuration() + latency;
+          double time =
+              current_time_ + (double) transaction.getDuration() + latency;
           events_queue_.insert(time, transaction);
         }
       }
