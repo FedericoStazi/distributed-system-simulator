@@ -34,5 +34,24 @@ class Message {
   } header_;
 };
 
+class MessageID : public dssim::Message {
+ public:
+  virtual int getID() const = 0;
+};
+
+class MessageUID : public dssim::MessageID {
+ public:
+  MessageUID() {
+    id_ = next_message_id_;
+    next_message_id_++;
+  }
+  [[nodiscard]] virtual int getID() const final {
+    return id_;
+  }
+ private:
+  static inline int next_message_id_ = 0;
+  int id_ = -1;
+};
+
 }
 #endif //DISTRIBUTED_SYSTEM_SIMULATOR__MESSAGE_H_

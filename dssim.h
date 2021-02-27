@@ -15,8 +15,8 @@
 #include "src/node/accepts.h"
 #include "src/node/accepts_trace.h"
 #include "src/communication/message.h"
-#include "src/communication/timer.h"
 #include "src/behaviour_assumptions/network_behaviours/no_interference.h"
 #include "src/behaviour_assumptions/network_behaviours/graph.h"
+#include "src/behaviour_assumptions/network_behaviours/location_based.h"
 
 #endif //DISTRIBUTED_SYSTEM_SIMULATOR__DSSIM_H_

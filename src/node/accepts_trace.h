@@ -6,34 +6,35 @@
 #define DISTRIBUTED_SYSTEM_SIMULATOR__ACCEPTS_TRACE_H_
 
 #include <iostream>
+#include <iomanip>
 
 namespace dssim {
 
 // This is a temporary solution. If future compilers will support it, use:
-// template<typename EventType, int duration, std::string traceName>
-template<typename EventType, int duration>
-class AcceptsTrace : public Accepts<EventType, duration> {
+// template<typename T, int duration, std::string traceName>
+template<typename T, int duration>
+class AcceptsTrace : public Accepts<T, duration> {
  private:
-  virtual Transaction getTransaction(EventType message) override;
+  virtual Transaction getTransaction(T message) override;
  private:
-  void getTrace(int time) const;
+  void getTrace(double time) const;
 };
 
-template<typename EventType, int duration>
-Transaction AcceptsTrace<EventType,
-                         duration>::getTransaction(EventType message) {
-  return Transaction(([=]() { this->onEvent(message); }),
-                     ([=](int time) { getTrace(time); }),
+template<typename T, int duration>
+Transaction AcceptsTrace<T,
+                         duration>::getTransaction(T message) {
+  return Transaction(([=]() { this->onMessage(message); }),
+                     ([=](double time) { getTrace(time); }),
                      duration);
 }
 
-template<typename EventType, int duration>
-void AcceptsTrace<EventType, duration>::getTrace(int time) const {
+template<typename T, int duration>
+void AcceptsTrace<T, duration>::getTrace(double time) const {
   std::cout
       << "****************************************************************\n"
       << "Time: " << std::to_string(time) << "\t\t" <<
       "Node id: " << std::to_string(ConnectedNode::getID()) << "\t\t" <<
-      typeid(*this).name() << " on " << typeid(EventType).name() << std::endl;
+      typeid(*this).name() << " on " << typeid(T).name() << std::endl;
 }
 
 }

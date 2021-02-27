@@ -1,0 +1,2 @@
+add_library(utils_reliable_broadcast reliable_broadcast.h)
+set_target_properties(utils_reliable_broadcast PROPERTIES LINKER_LANGUAGE CXX)

@@ -8,7 +8,6 @@
 namespace dssim {
 
 class Message;
-class Timer;
 
 class ConnectedNode : public virtual Node {
  public:
@@ -17,21 +16,23 @@ class ConnectedNode : public virtual Node {
     return id_;
   }
  protected:
-  template<typename MessageType>
-  void sendMessage(MessageType message, int receiver_id) const;
-  template<typename MessageType>
-  void broadcastMessage(MessageType message) const;
-  template<typename TimerType>
-  void startTimer(TimerType timer) const;
+  template<typename T>
+  void sendMessage(T message, int receiver_id) const;
+  template<typename T>
+  void sendSelfMessage(T message) const;
+  template<typename T>
+  void broadcastMessage(T message) const;
+  template<typename T>
+  void startTimer(double time, T message) const;
  private:
   void initializeConnection(std::shared_ptr<Network> network, int id) override;
   std::shared_ptr<Network> network_;
   int id_ = -1;
 };
 
-template<typename MessageType>
-void ConnectedNode::sendMessage(MessageType message, int receiver) const {
-  static_assert(std::is_base_of<Message, MessageType>::value,
+template<typename T>
+void ConnectedNode::sendMessage(T message, int receiver) const {
+  static_assert(std::is_base_of<Message, T>::value,
                 "sendMessage expects a subclass of Message");
   if (network_) {
     message.header_ = {getID(), receiver, false};
@@ -41,9 +42,14 @@ void ConnectedNode::sendMessage(MessageType message, int receiver) const {
   }
 }
 
-template<typename MessageType>
-void ConnectedNode::broadcastMessage(MessageType message) const {
-  static_assert(std::is_base_of<Message, MessageType>::value,
+template<typename T>
+void ConnectedNode::sendSelfMessage(T message) const {
+  sendMessage(message, getID());
+}
+
+template<typename T>
+void ConnectedNode::broadcastMessage(T message) const {
+  static_assert(std::is_base_of<Message, T>::value,
                 "broadcastMessage expects a subclass of Message");
   if (network_) {
     message.header_ = {getID(), 0, true};
@@ -53,13 +59,13 @@ void ConnectedNode::broadcastMessage(MessageType message) const {
   }
 }
 
-template<typename TimerType>
-void ConnectedNode::startTimer(TimerType timer) const {
-  static_assert(std::is_base_of<Timer, TimerType>::value,
-                "startTimer expects a subclass of Timer");
+template<typename T>
+void ConnectedNode::startTimer(double duration, T message) const {
+  static_assert(std::is_base_of<Message, T>::value,
+                "startTimer expects a subclass of Message");
   if (network_) {
-    timer.header_ = {getID()};
-    network_->startTimer(timer);
+    message.header_ = {getID(), getID(), false};
+    network_->startTimer(duration, message);
   } else {
     throw uninitializedConnectionError();
   }

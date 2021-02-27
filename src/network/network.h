@@ -7,6 +7,7 @@
 
 #include <map>
 #include <memory>
+#include <iostream>
 
 namespace dssim {
 
@@ -20,10 +21,10 @@ class Network {
   int addNode(std::unique_ptr<Node> node);
   void setNetworkBehaviour(std::unique_ptr<NetworkBehaviour> network_behaviour);
   void start();
-  template<typename MessageType>
-  void sendMessage(const MessageType message);
-  template<typename TimerType>
-  void startTimer(TimerType timer);
+  template<typename T>
+  void sendMessage(const T message);
+  template<typename T>
+  void startTimer(double timer_duration, T message);
  private:
   std::map<int, std::unique_ptr<Node>> nodes_;
   TimeQueue<Transaction> events_queue_;
@@ -54,9 +55,9 @@ void Network::start() {
   }
 }
 
-template<typename MessageType>
-void Network::sendMessage(const MessageType message) {
-  static_assert(std::is_base_of<Message, MessageType>::value,
+template<typename T>
+void Network::sendMessage(const T message) {
+  static_assert(std::is_base_of<Message, T>::value,
                 "sendMessage expects a subclass of Message");
   if (message.isBroadcast()) {
     for (const auto&[id, _] : nodes_) {
@@ -68,7 +69,7 @@ void Network::sendMessage(const MessageType message) {
     try {  // Non-silent fail would be a covert channel
       if (nodes_.count(message.getReceiver())) {
         auto &node =
-            dynamic_cast<AcceptingNode<MessageType> &>(*nodes_[message.getReceiver()]);
+            dynamic_cast<AcceptingNode<T> &>(*nodes_[message.getReceiver()]);
         std::vector<double> latencies = {0.0};
         if (network_behaviour_) {
           latencies = network_behaviour_->getLatencies(message);
@@ -79,7 +80,7 @@ void Network::sendMessage(const MessageType message) {
             network_behaviour_->getInterference(message_copy);
           }
           auto transaction = node.getTransaction(message_copy);
-          double time = current_time_ + transaction.getDuration() + latency;
+          double time = current_time_ + (double) transaction.getDuration() + latency;
           events_queue_.insert(time, transaction);
         }
       }
@@ -87,15 +88,15 @@ void Network::sendMessage(const MessageType message) {
   }
 }
 
-template<typename TimerType>
-void Network::startTimer(TimerType timer) {
-  static_assert(std::is_base_of<Timer, TimerType>::value,
-                "startTimer expects a subclass of Timer");
+template<typename T>
+void Network::startTimer(double timer_duration, T message) {
+  static_assert(std::is_base_of<Message, T>::value,
+                "startTimer expects a subclass of Message");
   try {  // Non-silent fail would be a covert channel
     auto &node =
-        dynamic_cast<AcceptingNode<TimerType> &>(*nodes_[timer.getOwner()]);
-    auto transaction = node.getTransaction(timer);
-    double time = current_time_ + transaction.getDuration();
+        dynamic_cast<AcceptingNode<T> &>(*nodes_[message.getReceiver()]);
+    auto transaction = node.getTransaction(message);
+    double time = current_time_ + timer_duration + transaction.getDuration();
     events_queue_.insert(time, transaction);
   } catch (std::bad_cast &e) {}
 }

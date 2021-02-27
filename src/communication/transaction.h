@@ -15,7 +15,7 @@ class Transaction {
   explicit Transaction(std::function<void()> func, int duration) :
       function_(std::move(func)), duration_(duration) {}
   explicit Transaction(std::function<void()> func,
-                       std::function<void(int)> trace,
+                       std::function<void(double)> trace,
                        int duration) :
       function_(std::move(func)),
       trace_(trace),
@@ -27,14 +27,14 @@ class Transaction {
   void inline runTransaction() const {
     function_();
   }
-  void inline runTrace(int time) const {
+  void inline runTrace(double time) const {
     if (has_trace_) {
       trace_(time);
     }
   }
  private:
   const std::function<void()> function_;
-  const std::function<void(int)> trace_;
+  const std::function<void(double)> trace_;
   int duration_;
   bool has_trace_ = false;
 };
