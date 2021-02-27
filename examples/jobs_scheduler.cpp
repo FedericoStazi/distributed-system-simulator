@@ -85,7 +85,7 @@ class Client : public dssim::Accepts<SchedulerReady, 1>,
     for (int i = 0; i < jobs_count; i++) {
       sendMessage(JobRequest(i), scheduler_id);
     }
-    startTimer(1, RequestsTimeout());
+    startTimer(RequestsTimeout(), 100);
   }
   void onMessage(JobCompleted message) override {
     completed_jobs.insert(message.getID());
@@ -100,7 +100,7 @@ class Client : public dssim::Accepts<SchedulerReady, 1>,
     }
     if (max_retries > 0 and completed_jobs.size() < jobs_count) {
       max_retries--;
-      startTimer(100, RequestsTimeout());
+      startTimer(RequestsTimeout(), 100);
     }
   }
  private:
@@ -122,7 +122,7 @@ int main() {
   auto network_behaviour =
       std::make_unique<BernoulliLoss_ExponentialLatency_Graph>();
   for (int worker : workers) {
-    network_behaviour->addBidirectionalEdge(worker, scheduler, {0.2, 0.1});
+    network_behaviour->addBidirectionalEdge(worker, scheduler, {0.1, 0.1});
   }
   network_behaviour->addBidirectionalEdge(client, scheduler, {0, 0.1});
   network.setNetworkBehaviour(std::move(network_behaviour));

@@ -23,7 +23,7 @@ class ConnectedNode : public virtual Node {
   template<typename T>
   void broadcastMessage(T message) const;
   template<typename T>
-  void startTimer(double time, T message) const;
+  void startTimer(T message, double time) const;
  private:
   void initializeConnection(std::shared_ptr<Network> network, int id) override;
   std::shared_ptr<Network> network_;
@@ -44,7 +44,7 @@ void ConnectedNode::sendMessage(T message, int receiver) const {
 
 template<typename T>
 void ConnectedNode::sendSelfMessage(T message) const {
-  sendMessage(message, getID());
+  startTimer(message, 0);
 }
 
 template<typename T>
@@ -60,7 +60,7 @@ void ConnectedNode::broadcastMessage(T message) const {
 }
 
 template<typename T>
-void ConnectedNode::startTimer(double duration, T message) const {
+void ConnectedNode::startTimer(T message, double duration) const {
   static_assert(std::is_base_of<Message, T>::value,
                 "startTimer expects a subclass of Message");
   if (network_) {

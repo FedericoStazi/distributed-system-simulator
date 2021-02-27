@@ -43,7 +43,7 @@ class ReliableBroadcastNode :
     ReliableBroadcastMessage<T> broadcast(message);
     broadcast.acks.insert(acks_[message_id].begin(), acks_[message_id].end());
     this->broadcastMessage(broadcast);
-    this->startTimer(10, ReliableBroadcastTimeout<T>(message));
+    this->startTimer(ReliableBroadcastTimeout<T>(message), 10);
   }
   void onMessage(ReliableBroadcastMessage<T> broadcast) override {
     const int message_id = broadcast.message.getID();
