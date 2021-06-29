@@ -12,15 +12,13 @@ struct LossLatencyEdge {
   double latency;
 };
 
-class BernoulliLoss_ExponentialLatency_Graph :
-    public dssim::behaviours::NoInterference,
-    public dssim::behaviours::Graph<LossLatencyEdge> {
+class BernoulliLoss_ExponentialLatency_Graph : public dssim::behaviours::Graph<LossLatencyEdge> {
  private:
-  std::vector<double> getEdgeLatencies(LossLatencyEdge edge) override {
-    if (std::bernoulli_distribution(edge.loss)(gen_)) {
-      return {};
-    }
-    return {std::exponential_distribution(edge.latency)(gen_)};
+  bool getEdgeLoss(LossLatencyEdge edge) override {
+    return std::bernoulli_distribution(edge.loss)(gen_);
+  }
+  double getEdgeLatency(LossLatencyEdge edge) override {
+    return std::exponential_distribution(edge.latency)(gen_);
   }
   std::default_random_engine gen_{RANDOM_SEED};
 };
@@ -136,8 +134,7 @@ int main() {
   int client = network.emplaceNode<Client>();
 
   // Set network behaviour
-  auto network_behaviour =
-      std::make_unique<BernoulliLoss_ExponentialLatency_Graph>();
+  auto network_behaviour = std::make_unique<BernoulliLoss_ExponentialLatency_Graph>();
   for (int worker : workers) {
     network_behaviour->addBidirectionalEdge(worker, scheduler, {0.1, 0.1});
   }

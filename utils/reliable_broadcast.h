@@ -34,7 +34,7 @@ class ReliableBroadcastNode :
     public dssim::Accepts<ReliableBroadcastTimeout<T>, 1> {
  public:
   explicit ReliableBroadcastNode(int nodes_count) : nodes_count_(nodes_count) {}
-  void reliableBroadcastMessage(const T &message) {
+  void reliableBroadcastMessage(const T& message) {
     const int message_id = message.getID();
     if (status_[message_id] == IDLE) {
       status_[message_id] = SOURCE;

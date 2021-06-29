@@ -13,13 +13,20 @@ class Message;
 
 class NetworkBehaviour {
  public:
-  // Get the number of copies of the message and their latencies, e.g.:
-  // A message with 1ms latency:  {1.0}
-  // A duplicated message:        {1.23, 4.56}
-  // A lost message:              {}
-  virtual std::vector<double> getLatencies(const Message& message) = 0;
+  // Get the number of copies of the message that will be received.
+  // Can be 0 if the message is lost.
+  virtual int getDuplication(const Message& message) {
+    return 1;
+  };
+
+  // Get the latency of the message in ms.
+  // duplicate_index is used to distinguish between the duplicates of the message.
+  virtual double getLatency(const Message& message, int duplicate_index) {
+    return 0.0;
+  };
+
   // Apply interference (i.e. modifications) to the message
-  virtual void applyInterference(Message& message) = 0;
+  virtual void applyInterference(Message& message) {};
 };
 
 }

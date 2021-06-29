@@ -19,9 +19,9 @@ class Network {
  public:
   int addNode(std::unique_ptr<Node> node);
   template<typename T, typename ... Args>
-  int emplaceNode(const Args &... args);
+  int emplaceNode(const Args& ... args);
   template<typename T, typename ... Args>
-  std::vector<int> emplaceMultipleNodes(int n, const Args &... args);
+  std::vector<int> emplaceMultipleNodes(int n, const Args& ... args);
   void setNetworkBehaviour(std::unique_ptr<NetworkBehaviour> network_behaviour);
   void setNodesBehaviour(std::unique_ptr<NodesBehaviour> nodes_behaviour);
   void start();
@@ -36,8 +36,8 @@ class Network {
   TimeQueue<Transaction> events_queue_;
   unsigned int next_id_ = 0;
   double current_time_ = 0;
-  std::unique_ptr<NetworkBehaviour> network_behaviour_;
-  std::unique_ptr<NodesBehaviour> nodes_behaviour_;
+  std::unique_ptr<NetworkBehaviour> network_behaviour_ = std::make_unique<NetworkBehaviour>();
+  std::unique_ptr<NodesBehaviour> nodes_behaviour_ = std::make_unique<NodesBehaviour>();
 };
 
 int Network::addNode(std::unique_ptr<Node> node) {
@@ -47,16 +47,15 @@ int Network::addNode(std::unique_ptr<Node> node) {
 }
 
 template<typename T, typename... Args>
-int Network::emplaceNode(const Args &... args) {
+int Network::emplaceNode(const Args& ... args) {
   static_assert(std::is_base_of<Node, T>::value, "T must be a Node");
   return addNode(std::make_unique<T>(args...));
 }
 
 template<typename T, typename... Args>
-std::vector<int> Network::emplaceMultipleNodes(int n, const Args &... args) {
+std::vector<int> Network::emplaceMultipleNodes(int n, const Args& ... args) {
   std::vector<int> ids;
-  std::generate_n(std::back_inserter(ids), n,
-                  [&]() { return emplaceNode<T>(args...); });
+  std::generate_n(std::back_inserter(ids), n, [&]() { return emplaceNode<T>(args...); });
   return ids;
 }
 
@@ -82,8 +81,7 @@ void Network::start() {
 
 template<typename T>
 void Network::sendMessage(const T message) {
-  static_assert(std::is_base_of<Message, T>::value,
-                "sendMessage expects a subclass of Message");
+  static_assert(std::is_base_of<Message, T>::value, "sendMessage expects a subclass of Message");
   if (message.isBroadcast()) {
     for (const auto&[id, _] : nodes_) {
       auto message_copy = message;
@@ -91,40 +89,32 @@ void Network::sendMessage(const T message) {
       sendMessage(message_copy);
     }
   } else {
-    try {  // Non-silent fail would be a covert channel
+    try {
       if (nodes_.count(message.getReceiver())) {
-        auto &node =
-            dynamic_cast<AcceptingNode<T> &>(*nodes_[message.getReceiver()]);
-        std::vector<double> latencies = {0.0};
-        if (network_behaviour_) {
-          latencies = network_behaviour_->getLatencies(message);
-        }
-        for (double latency : latencies) {
+        auto& node = dynamic_cast<AcceptingNode<T>&>(*nodes_[message.getReceiver()]);
+        int duplicates = network_behaviour_->getDuplication(message);
+        for (int duplicate_index = 0; duplicate_index < duplicates; duplicate_index++) {
           auto message_copy = message;
-          if (network_behaviour_) {
-            network_behaviour_->applyInterference(message_copy);
-          }
+          double latency = network_behaviour_->getLatency(message, duplicate_index);
+          network_behaviour_->applyInterference(message_copy);
           auto transaction = node.getTransaction(message_copy);
-          double time =
-              current_time_ + (double) transaction.getDuration() + latency;
+          double time = current_time_ + (double) transaction.getDuration() + latency;
           events_queue_.insert(time, transaction);
         }
       }
-    } catch (std::bad_cast &e) {}
+    } catch (std::bad_cast& e) {}  // Non-silent fail would be a covert channel
   }
 }
 
 template<typename T>
 void Network::startTimer(double timer_duration, T message) {
-  static_assert(std::is_base_of<Message, T>::value,
-                "startTimer expects a subclass of Message");
-  try {  // Non-silent fail would be a covert channel
-    auto &node =
-        dynamic_cast<AcceptingNode<T> &>(*nodes_[message.getReceiver()]);
+  static_assert(std::is_base_of<Message, T>::value, "startTimer expects a subclass of Message");
+  try {
+    auto& node = dynamic_cast<AcceptingNode<T>&>(*nodes_[message.getReceiver()]);
     auto transaction = node.getTransaction(message);
     double time = current_time_ + timer_duration + transaction.getDuration();
     events_queue_.insert(time, transaction);
-  } catch (std::bad_cast &e) {}
+  } catch (std::bad_cast& e) {}  // Non-silent fail would be a covert channel
 }
 
 }

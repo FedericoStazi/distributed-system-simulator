@@ -9,18 +9,16 @@
 #include "../dssim.h"
 #include "../utils/reliable_broadcast.h"
 
-class LinearLoss_LinearLatency_Location :
-    public dssim::behaviours::NoInterference,
-    public dssim::behaviours::LocationBased {
+class LinearLoss_LinearLatency_Location : public dssim::behaviours::LocationBased {
  public:
   LinearLoss_LinearLatency_Location(double loss, double latency) :
       loss_(loss), latency_(latency) {}
  private:
-  std::vector<double> getEdgeLatencies(double distance) override {
-    if (std::bernoulli_distribution(loss_ * distance)(gen_)) {
-      return {};
-    }
-    return {latency_ * distance};
+  bool isDropped(double distance) override {
+    return std::bernoulli_distribution(loss_ * distance)(gen_);
+  }
+  double getEdgeLatency(double distance) override {
+    return latency_ * distance;
   }
   std::default_random_engine gen_{RANDOM_SEED};
   double loss_;
@@ -30,12 +28,10 @@ class LinearLoss_LinearLatency_Location :
 struct TestMessage : dssim::MessageUID {};
 
 class Broadcaster : public dssim::utils::ReliableBroadcastNode<TestMessage>,
-                    public dssim::AcceptsTrace<dssim::utils::ReliableBroadcastSuccess<
-                        TestMessage>, 1> {
+                    public dssim::AcceptsTrace<dssim::utils::ReliableBroadcastSuccess<TestMessage>, 1> {
  public:
-  explicit Broadcaster(int nodes_count, bool is_sender) :
-      is_sender_(is_sender),
-      dssim::utils::ReliableBroadcastNode<TestMessage>(nodes_count) {}
+  explicit Broadcaster(int nodes_count, bool is_sender)
+      : is_sender_(is_sender), dssim::utils::ReliableBroadcastNode<TestMessage>(nodes_count) {}
   void onStart() override {
     if (is_sender_) {
       reliableBroadcastMessage(TestMessage());
@@ -57,13 +53,12 @@ int main() {
   dssim::Network network;
 
   // Add nodes to the network
-  int n = 100;
+  int n = 50;
   auto nodes = network.emplaceMultipleNodes<Broadcaster>(n - 1, n, false);
   nodes.push_back(network.emplaceNode<Broadcaster>(n, true));
 
   // Set network behaviour
-  auto network_behaviour =
-      std::make_unique<LinearLoss_LinearLatency_Location>(0.8, 10.0);
+  auto network_behaviour = std::make_unique<LinearLoss_LinearLatency_Location>(0.8, 10.0);
   for (int node : nodes) {
     network_behaviour->addRandomLocation(node);
   }
