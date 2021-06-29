@@ -94,7 +94,9 @@ void Network::sendMessage(const T message) {
           double latency = network_behaviour_->getLatency(message, duplicate_index);
           network_behaviour_->applyInterference(message_copy);
           auto transaction = node.getTransaction(message_copy);
-          double time = current_time_ + (double) transaction.getDuration() + latency;
+          double processing =
+              nodes_behaviour_->getProcessingTime(current_time_, transaction.getDuration(), message.getReceiver());
+          double time = processing + latency;
           events_queue_.insert(time, transaction);
         }
       }
