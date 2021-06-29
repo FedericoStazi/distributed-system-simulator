@@ -1,7 +1,3 @@
-//
-// Created by federico on 25/02/2021.
-//
-
 #ifndef DISTRIBUTED_SYSTEM_SIMULATOR__ACCEPTS_H_
 #define DISTRIBUTED_SYSTEM_SIMULATOR__ACCEPTS_H_
 

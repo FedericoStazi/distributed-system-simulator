@@ -1,7 +1,3 @@
-//
-// Created by federico on 06/01/2021.
-//
-
 #ifndef DISTRIBUTED_SYSTEM_SIMULATOR__TIME_QUEUE_H_
 #define DISTRIBUTED_SYSTEM_SIMULATOR__TIME_QUEUE_H_
 

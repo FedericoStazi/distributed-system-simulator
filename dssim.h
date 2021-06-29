@@ -1,7 +1,3 @@
-//
-// Created by federico on 29/01/2021.
-//
-
 #ifndef DISTRIBUTED_SYSTEM_SIMULATOR__DSSIM_H_
 #define DISTRIBUTED_SYSTEM_SIMULATOR__DSSIM_H_
 

@@ -1,7 +1,3 @@
-//
-// Created by federico on 07/01/2021.
-//
-
 #ifndef DISTRIBUTED_SYSTEM_SIMULATOR__MESSAGE_H_
 #define DISTRIBUTED_SYSTEM_SIMULATOR__MESSAGE_H_
 

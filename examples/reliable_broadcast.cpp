@@ -1,7 +1,3 @@
-//
-// Created by federico on 25/02/2021.
-//
-
 #include <unordered_set>
 #include <set>
 #include <random>
