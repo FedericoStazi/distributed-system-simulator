@@ -14,13 +14,8 @@ class Transaction {
  public:
   explicit Transaction(std::function<void()> func, int duration) :
       function_(std::move(func)), duration_(duration) {}
-  explicit Transaction(std::function<void()> func,
-                       std::function<void(double)> trace,
-                       int duration) :
-      function_(std::move(func)),
-      trace_(trace),
-      duration_(duration),
-      has_trace_(true) {}
+  explicit Transaction(std::function<void()> func, std::function<void(double)> trace, int duration) :
+      function_(std::move(func)), trace_(trace), duration_(duration), has_trace_(true) {}
   [[nodiscard]] inline int getDuration() const {
     return duration_;
   }

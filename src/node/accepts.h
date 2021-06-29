@@ -8,9 +8,7 @@
 namespace dssim {
 
 template<typename T, int duration>
-class Accepts : private virtual AcceptingNode<T>,
-                protected virtual ConnectedNode,
-                public virtual Node {
+class Accepts : private virtual AcceptingNode<T>, protected virtual ConnectedNode, public virtual Node {
  private:
   virtual Transaction getTransaction(T message) override;
  protected:
@@ -18,8 +16,7 @@ class Accepts : private virtual AcceptingNode<T>,
 };
 
 template<typename T, int duration>
-Transaction Accepts<T,
-                    duration>::getTransaction(T message) {
+Transaction Accepts<T, duration>::getTransaction(T message) {
   return Transaction(([=]() { onMessage(message); }), duration);
 }
 

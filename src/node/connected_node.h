@@ -32,8 +32,7 @@ class ConnectedNode : public virtual Node {
 
 template<typename T>
 void ConnectedNode::sendMessage(T message, int receiver) const {
-  static_assert(std::is_base_of<Message, T>::value,
-                "sendMessage expects a subclass of Message");
+  static_assert(std::is_base_of<Message, T>::value, "sendMessage expects a subclass of Message");
   if (network_) {
     message.header_ = {getID(), receiver, false};
     network_->sendMessage(message);
@@ -49,8 +48,7 @@ void ConnectedNode::sendSelfMessage(T message) const {
 
 template<typename T>
 void ConnectedNode::broadcastMessage(T message) const {
-  static_assert(std::is_base_of<Message, T>::value,
-                "broadcastMessage expects a subclass of Message");
+  static_assert(std::is_base_of<Message, T>::value, "broadcastMessage expects a subclass of Message");
   if (network_) {
     message.header_ = {getID(), 0, true};
     network_->sendMessage(message);
@@ -61,8 +59,7 @@ void ConnectedNode::broadcastMessage(T message) const {
 
 template<typename T>
 void ConnectedNode::startTimer(T message, double duration) const {
-  static_assert(std::is_base_of<Message, T>::value,
-                "startTimer expects a subclass of Message");
+  static_assert(std::is_base_of<Message, T>::value, "startTimer expects a subclass of Message");
   if (network_) {
     message.header_ = {getID(), getID(), false};
     network_->startTimer(duration, message);
@@ -71,8 +68,7 @@ void ConnectedNode::startTimer(T message, double duration) const {
   }
 }
 
-void ConnectedNode::initializeConnection(std::shared_ptr<Network> network,
-                                         int id) {
+void ConnectedNode::initializeConnection(std::shared_ptr<Network> network, int id) {
   network_ = std::move(network);
   id_ = id;
 }

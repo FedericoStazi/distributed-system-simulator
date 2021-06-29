@@ -21,11 +21,8 @@ class AcceptsTrace : public Accepts<T, duration> {
 };
 
 template<typename T, int duration>
-Transaction AcceptsTrace<T,
-                         duration>::getTransaction(T message) {
-  return Transaction(([=]() { this->onMessage(message); }),
-                     ([=](double time) { getTrace(time); }),
-                     duration);
+Transaction AcceptsTrace<T, duration>::getTransaction(T message) {
+  return Transaction(([=]() { this->onMessage(message); }), ([=](double time) { getTrace(time); }), duration);
 }
 
 template<typename T, int duration>
