@@ -7,8 +7,25 @@
 #include <random>
 #include <utility>
 #include "../dssim.h"
-#include "example_behaviours.h"
 #include "../utils/reliable_broadcast.h"
+
+class LinearLoss_LinearLatency_Location :
+    public dssim::behaviours::NoInterference,
+    public dssim::behaviours::LocationBased {
+ public:
+  LinearLoss_LinearLatency_Location(double loss, double latency) :
+      loss_(loss), latency_(latency) {}
+ private:
+  std::vector<double> getEdgeLatencies(double distance) override {
+    if (std::bernoulli_distribution(loss_ * distance)(gen_)) {
+      return {};
+    }
+    return {latency_ * distance};
+  }
+  std::default_random_engine gen_{RANDOM_SEED};
+  double loss_;
+  double latency_;
+};
 
 struct TestMessage : dssim::MessageUID {};
 

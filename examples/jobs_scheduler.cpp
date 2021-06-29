@@ -6,7 +6,24 @@
 #include <set>
 #include <random>
 #include "../dssim.h"
-#include "example_behaviours.h"
+
+struct LossLatencyEdge {
+  double loss;
+  double latency;
+};
+
+class BernoulliLoss_ExponentialLatency_Graph :
+    public dssim::behaviours::NoInterference,
+    public dssim::behaviours::Graph<LossLatencyEdge> {
+ private:
+  std::vector<double> getEdgeLatencies(LossLatencyEdge edge) override {
+    if (std::bernoulli_distribution(edge.loss)(gen_)) {
+      return {};
+    }
+    return {std::exponential_distribution(edge.latency)(gen_)};
+  }
+  std::default_random_engine gen_{RANDOM_SEED};
+};
 
 struct RequestsTimeout : public dssim::Message {};
 
