@@ -49,7 +49,7 @@ int main() {
   dssim::Network network;
 
   // Add nodes to the network
-  int n = 50;
+  int n = 75;
   auto nodes = network.emplaceMultipleNodes<Broadcaster>(n - 1, n, false);
   nodes.push_back(network.emplaceNode<Broadcaster>(n, true));
 
