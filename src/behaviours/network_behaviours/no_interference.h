@@ -8,7 +8,7 @@
 namespace dssim::behaviours {
 
 class NoInterference : public virtual NetworkBehaviour {
-  virtual void getInterference(Message& message) {}
+  virtual void applyInterference(Message& message) {}
 };
 
 }

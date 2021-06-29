@@ -102,7 +102,7 @@ void Network::sendMessage(const T message) {
         for (double latency : latencies) {
           auto message_copy = message;
           if (network_behaviour_) {
-            network_behaviour_->getInterference(message_copy);
+            network_behaviour_->applyInterference(message_copy);
           }
           auto transaction = node.getTransaction(message_copy);
           double time =
