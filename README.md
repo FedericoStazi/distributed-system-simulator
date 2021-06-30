@@ -22,12 +22,18 @@ To simulate such model, see the **Network**, **Messages** and **Nodes** sections
 In order for this model to be more realistic some additional constraints and characteristics can be defined.
 
 The network connecting the nodes in the system cah have the following behaviours:
-- Reliable and instantaneous. Messages are received immediately.
-- Reliable. Messages are always received, but transmission is not instantaneous. Depending on how latencies are defined, this may mean that messages can be reordered.
+- Reliable and instantaneous: Messages are received immediately.
+- Reliable: Messages are always received, but transmission is not instantaneous. Depending on how latencies are defined, this may mean that messages can be reordered.
 - Fair-loss links: Messages could be lost or duplicated. The only constraint is that if a node keeps sending a message, this will eventually be received.
 - Arbitrary links: Messages can be lost or duplicated indefinitely.
 
-To add these specific behaviours in a model, se the **Behaviours** section.
+The nodes in the system cah have the following behaviours:
+- No-crash and No-pause: Nodes never crash and never pause execution.
+- No-crash: Nodes never crash, but may sometimes pause execution.
+- Crash-stop: Nodes can pause and crash. If they crash, they will never resume execution.
+- Crash-recovery: Nodes can pause and crash. If they crash, they may resume execution at some point in the future, but lose all the current work.
+
+To add these (or other) behaviours in a model, se the **Behaviours** section.
 
 
 ## Network

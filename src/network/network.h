@@ -94,10 +94,12 @@ void Network::sendMessage(const T message) {
           double latency = network_behaviour_->getLatency(message, duplicate_index);
           network_behaviour_->applyInterference(message_copy);
           auto transaction = node.getTransaction(message_copy);
-          double processing =
-              nodes_behaviour_->getProcessingTime(current_time_, transaction.getDuration(), message.getReceiver());
-          double time = processing + latency;
-          events_queue_.insert(time, transaction);
+          auto processing =
+              nodes_behaviour_->getCompletionTime(current_time_, transaction.getDuration(), message.getReceiver());
+          if (processing.has_value()) {
+            double time = processing.value() + latency;
+            events_queue_.insert(time, transaction);
+          }
         }
       }
     } catch (std::bad_cast& e) {}  // Non-silent fail would be a covert channel
