@@ -6,6 +6,8 @@
 #include <unordered_map>
 #include <iostream>
 
+namespace dssim {
+
 class NodeStatus {
  public:
   enum {
@@ -15,7 +17,6 @@ class NodeStatus {
   } status;
   double time;
 };
-
 
 class NodesBehaviour {
  public:
@@ -33,9 +34,9 @@ class NodesBehaviour {
     status_queue.front().time = current_time;
 
     // Get the completion time of this task on this node
-    for (auto status = status_queue.begin(); ; status++) {
+    for (auto status = status_queue.begin();; status++) {
       if (status + 1 == status_queue.end()) {
-        status_queue.push_back(getNextStatusTime(status->time, id));
+        status_queue.push_back(getNextStatus(*status, id));
         status = status_queue.end() - 2;  // Avoid errors caused by pointer invalidation
       }
       if (status->status == NodeStatus::Alive) {
@@ -53,12 +54,14 @@ class NodesBehaviour {
 
  protected:
   // Get the start time of the status following the status starting at current_time.
-  virtual NodeStatus getNextStatusTime(double current_time, int id) {
+  virtual NodeStatus getNextStatus(const NodeStatus& current_status, int id) {
     return {NodeStatus::Crashed, std::numeric_limits<double>::infinity()};
   };
 
  private:
   std::unordered_map<int, std::deque<NodeStatus>> id_status_map_;
 };
+
+}
 
 #endif //DISTRIBUTED_SYSTEM_SIMULATOR_SRC_BEHAVIOURS_NODES_BEHAVIOUR_H_

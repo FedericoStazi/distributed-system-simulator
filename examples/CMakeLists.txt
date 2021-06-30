@@ -3,3 +3,6 @@ target_link_libraries(example_jobs_scheduler dssim)
 
 add_executable(example_reliable_broadcast reliable_broadcast.cpp)
 target_link_libraries(example_reliable_broadcast dssim utils_reliable_broadcast)
+
+add_executable(circular_distributed_hash_table circular_distributed_hash_table.cpp)
+target_link_libraries(circular_distributed_hash_table dssim)
