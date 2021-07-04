@@ -73,3 +73,18 @@ The only difference with a regular function call is that doing this ensures that
 `startTimer(message, 0)` is the same as `sendSelfMessage(message)`.
 
 ## Behaviours
+
+#### Network Behaviours
+
+Custom Network Behaviours can be used to implement the behaviours described in the introduction.
+A network behaviour has three methods, which are called every time a message is sent. These are:
+- `int getDuplication(message)`. Get the number of times the message is received. This is 0 if the message is lost, 1 if the message is sent correctly, 2 or more if the message is received 2 or more times.
+- `double getLatency(message)`. Get the latency of the message.
+- `void applyInterference(message)`. Modify the message to simulate the effects of interference (message is a reference).
+
+#### Nodes Behaviours
+
+Custom Nodes Behaviours can be used to implement the behaviours described in the introduction.
+The helper class `NodeStatus` is used. Each object has a status (Alive, Paused or Crashed) and a start time. The end time is implicitly defined by the next NodeStatus object.
+There is only one method, which may be called at any time by the simulator:
+- `NodeStatus getNextStatus(current_status, id)`. Get the status after current_status at the node identified by id.
